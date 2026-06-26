@@ -652,7 +652,10 @@ with st.sidebar:
     st.markdown(f"### {t('ai_engine')}")
 
     # 优先 Streamlit Cloud secrets，其次 .env 本地文件
-    saved_key = st.secrets.get("DEEPSEEK_API_KEY", "") or os.getenv("DEEPSEEK_API_KEY", "")
+    try:
+        saved_key = st.secrets["DEEPSEEK_API_KEY"]
+    except Exception:
+        saved_key = os.getenv("DEEPSEEK_API_KEY", "")
 
     if saved_key:
         masked = saved_key[:5] + "****" + saved_key[-4:]
