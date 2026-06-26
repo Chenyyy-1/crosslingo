@@ -1,0 +1,6 @@
+# ！！！重要：.env 文件包含你的 API 密钥，绝对不能上传到 GitHub ！！！
+.env
+
+# Python 缓存文件
+__pycache__/
+*.pyc
