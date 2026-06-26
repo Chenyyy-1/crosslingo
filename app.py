@@ -20,6 +20,7 @@ import io
 import re
 from fpdf import FPDF
 from dotenv import load_dotenv
+import streamlit.components.v1 as components
 
 # 文件解析库
 from docx import Document       # 解析 Word .docx 文件
@@ -27,9 +28,11 @@ from PyPDF2 import PdfReader    # 解析 PDF 文件
 
 load_dotenv()
 
-# ---- 初始化语言设置 ----
+# ---- 初始化语言 & 主题 ----
 if "lang" not in st.session_state:
     st.session_state.lang = "zh"
+if "theme" not in st.session_state:
+    st.session_state.theme = "light"
 
 # ---- 翻译字典 ----
 L = {
@@ -133,9 +136,6 @@ L = {
     "severity_high":    {"zh": "高风险",                       "en": "High"},
     "severity_medium":  {"zh": "中等风险",                     "en": "Medium"},
     "severity_low":     {"zh": "低风险",                       "en": "Low"},
-    "severity_high_short": {"zh": "高",                        "en": "H"},
-    "severity_medium_short": {"zh": "中",                      "en": "M"},
-    "severity_low_short":  {"zh": "低",                        "en": "L"},
     "pdf_report_title": {"zh": "CrossLingo 合同风险扫描报告",   "en": "CrossLingo Contract Risk Scan Report"},
     "pdf_stats_title":  {"zh": "统计概览",                     "en": "Statistics Overview"},
     "pdf_risk_score":   {"zh": "综合风险指数",                 "en": "Risk Index"},
@@ -143,6 +143,11 @@ L = {
     # 页脚
     "footer_text":      {"zh": "涉外商务合同双语风险扫描器", "en": "Bilingual Contract Risk Scanner"},
     "missing_clause_placeholder": {"zh": "（条款缺失）", "en": "(Missing)"},
+    "unknown_level":    {"zh": "未知",                         "en": "Unknown"},
+    "unnamed_clause":   {"zh": "未命名条款",                   "en": "Unnamed Clause"},
+    "no_content":       {"zh": "（—）",                       "en": "(—)"},
+    "char_count":       {"zh": "共 {} 字符",                   "en": "{} characters"},
+    "clear_btn":        {"zh": "🗑️ 清空",                     "en": "🗑️ Clear"},
 }
 
 def t(key):
@@ -460,6 +465,67 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ========== 暗色模式 CSS ==========
+if st.session_state.theme == "dark":
+    st.markdown("""
+    <style>
+        .stApp { background: #0d1117 !important; }
+        .block-container { }
+        /* 卡片 */
+        .stat-card, .dashboard-card, .feature-card, .dimension-mini, .score-container,
+        .hero-strip { background: #161b22 !important; border-color: #30363d !important; }
+        .feature-card:hover, .stat-card:hover { border-color: #C9A06C60 !important; }
+        /* 文字 */
+        h1,h2,h3,h4,h5,.stat-card .stat-number,.dimension-mini .dim-count,
+        .feature-card .feature-title,.scan-title { color: #e6edf3 !important; }
+        .feature-card .feature-desc,.stat-card .stat-label,.scan-subtitle,
+        .dimension-mini .dim-name,.app-footer,.scan-step .step-label,
+        .section-divider .divider-diamond { color: #8b949e !important; }
+        /* 背景条 */
+        .stat-card.stat-total::before, .stat-card.stat-high::before,
+        .stat-card.stat-medium::before, .stat-card.stat-low::before { opacity: 0.6; }
+        .stat-total .stat-number { color: #e6edf3 !important; }
+        .dimension-mini .dim-bar-bg { background: #21262d !important; }
+        .scan-step .step-num { background: #21262d !important; color: #8b949e !important; }
+        /* 侧边栏 */
+        section[data-testid="stSidebar"] { background: #0d1117 !important; border-color: #30363d !important; }
+        section[data-testid="stSidebar"] * { color: #e6edf3 !important; }
+        section[data-testid="stSidebar"] .stSuccess { color: #3fb950 !important; }
+        /* 输入区 */
+        .stTextArea textarea { background: #161b22 !important; color: #e6edf3 !important; border-color: #30363d !important; }
+        .stSelectbox [data-baseweb="select"] > div { background: #161b22 !important; border-color: #30363d !important; }
+        /* 对比框 */
+        .compare-box { background: #161b22 !important; color: #c9d1d9 !important; }
+        /* 筛选器 */
+        .stRadio [data-baseweb="radio"] label { color: #e6edf3 !important; }
+        /* 展开面板 */
+        .streamlit-expanderHeader { color: #e6edf3 !important; }
+        .streamlit-expanderHeader:hover { background: #161b22 !important; }
+        /* 分割线 */
+        .section-divider .divider-line { background: linear-gradient(90deg, transparent, #30363d, transparent) !important; }
+        /* Tab */
+        .stTabs [data-baseweb="tab"] { color: #8b949e !important; }
+        .stTabs [aria-selected="true"] { color: #e6edf3 !important; }
+        /* 上传区 */
+        .stFileUploader section { background: #161b22 !important; border-color: #30363d !important; }
+        .stFileUploader section * { color: #e6edf3 !important; }
+        /* 加载动画 */
+        .scan-overlay { background: linear-gradient(180deg, #161b22, #0d1117) !important; border-color: #30363d !important; }
+        /* Hero条 */
+        .hero-strip { background: linear-gradient(135deg, #161b22, #0d1117) !important; border-color: #30363d !important; }
+        .hero-strip .hero-text h3 { color: #e6edf3 !important; }
+        .hero-strip .hero-text p { color: #8b949e !important; }
+        /* 毛玻璃 */
+        .top-frosted-bar { background: rgba(13,17,23,0.6) !important; }
+        /* 按钮 */
+        .stDownloadButton > button { background: #161b22 !important; color: #e6edf3 !important; border-color: #30363d !important; }
+        .stDownloadButton > button:hover { background: #1a3a6b !important; color: #fff !important; }
+        /* 分隔线 */
+        hr, .stDivider { border-color: #30363d !important; }
+    </style>
+    """, unsafe_allow_html=True)
+# ========== 暗色模式结束 ==========
+
 # ========== 第3.5步：顶部毛玻璃遮罩 ==========
 st.markdown('<div class="top-frosted-bar"></div>', unsafe_allow_html=True)
 
@@ -663,11 +729,18 @@ def extract_text_from_file(uploaded_file):
 
 # ========== 第7步：侧边栏 ==========
 with st.sidebar:
-    # 语言切换
-    lang_label = "🌐 中文" if st.session_state.lang == "zh" else "🌐 English"
-    if st.button(lang_label, use_container_width=True, key="lang_toggle"):
-        st.session_state.lang = "en" if st.session_state.lang == "zh" else "zh"
-        st.rerun()
+    # 语言切换 + 暗色模式
+    tgl_col1, tgl_col2 = st.columns(2)
+    with tgl_col1:
+        lang_label = "🌐 中文" if st.session_state.lang == "zh" else "🌐 English"
+        if st.button(lang_label, use_container_width=True, key="lang_toggle"):
+            st.session_state.lang = "en" if st.session_state.lang == "zh" else "zh"
+            st.rerun()
+    with tgl_col2:
+        theme_label = "🌙 暗色" if st.session_state.theme == "light" else "☀️ 亮色"
+        if st.button(theme_label, use_container_width=True, key="theme_toggle"):
+            st.session_state.theme = "dark" if st.session_state.theme == "light" else "light"
+            st.rerun()
 
     st.markdown(f"### {t('ai_engine')}")
 
@@ -732,22 +805,35 @@ if uploaded_file is not None:
     extracted = extract_text_from_file(uploaded_file)
     if extracted:
         st.success(f"✅ {t('parse_success')}「{uploaded_file.name}」—— {len(extracted)} {t('parse_chars')}")
-        default_text = extracted
+        st.session_state._text_val = extracted
     else:
         st.error(f"❌ {t('parse_error')}「{uploaded_file.name}」，{t('parse_only')}")
-        default_text = CONTRACT_TEMPLATES[template_choice]
+        st.session_state._text_val = CONTRACT_TEMPLATES[template_choice]
 else:
-    default_text = CONTRACT_TEMPLATES[template_choice]
+    if "_text_val" not in st.session_state:
+        st.session_state._text_val = CONTRACT_TEMPLATES[template_choice]
+    # 模板切换时更新
+    if st.session_state.get("_last_template") != template_choice:
+        st.session_state._text_val = CONTRACT_TEMPLATES[template_choice]
+st.session_state._last_template = template_choice
 
 contract_text = st.text_area(
     t("contract_label"),
-    value=default_text,
+    value=st.session_state._text_val,
     height=300,
     placeholder=t("contract_placeholder")
 )
+st.session_state._text_val = contract_text  # 同步用户编辑
+
+# 字数统计
+st.caption(t("char_count").format(len(contract_text)))
 
 # ========== 第9步：扫描按钮 ==========
-col1, col2, col3 = st.columns([1, 2, 1])
+col1, col2, col3 = st.columns([1, 3, 1])
+with col1:
+    if st.button(t("clear_btn"), use_container_width=True, key="clear_contract"):
+        st.session_state._text_val = ""
+        st.rerun()
 with col2:
     scan_button = st.button(
         t("scan_btn"),
@@ -863,7 +949,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
     # ---- 风险指数 ----
     pdf.set_text_color(15, 31, 61)
     pdf.set_font(F, "", 16)
-    pdf.cell(0, 10, f"{RISK}：{risk_score}/100（{safe(score_label)}）", ln=True)
+    pdf.cell(0, 10, safe(f"{RISK}: {risk_score}/100 ({score_label})"), ln=True)
     pdf.ln(4)
     bar_x, bar_y, bar_w, bar_h = 14, pdf.get_y(), 180, 5
     bc = (192,57,43) if risk_score>=66 else ((230,126,34) if risk_score>=33 else (39,174,96))
@@ -915,7 +1001,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
         pdf.set_fill_color(245, 246, 248)
         pdf.set_text_color(15, 31, 61)
         pdf.set_font(F, "", 11)
-        pdf.cell(0, 8, f"  {dim_name}  |  {RT}：{rl}  |  {IT}：{len(findings)}{CT}", ln=True, fill=True)
+        pdf.cell(0, 8, safe(f"  {dim_name}  |  {RT}: {rl}  |  {IT}: {len(findings)}{CT}"), ln=True, fill=True)
         pdf.ln(3)
 
         if findings:
@@ -930,15 +1016,15 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
                 pdf.set_text_color(58, 74, 92)
                 pdf.set_font(F, "", 8)
                 pdf.set_x(14)
-                pdf.multi_cell(0, 4.5, f"{PT}：{safe(f.get('issue',''))}")
+                pdf.multi_cell(0, 4.5, safe(f"{PT}: {f.get('issue','')}"))
                 pdf.set_text_color(201, 160, 108)
                 pdf.set_x(14)
-                pdf.multi_cell(0, 4.5, f"{ST}：{safe(f.get('suggestion',''))}")
+                pdf.multi_cell(0, 4.5, safe(f"{ST}: {f.get('suggestion','')}"))
                 for tag, txt in [(CRT, f.get("revised_cn","")), (ERT, f.get("revised_en",""))]:
                     if txt:
                         pdf.set_text_color(39, 174, 96)
                         pdf.set_x(14)
-                        pdf.multi_cell(0, 4.5, f"{tag}：{safe(txt)}")
+                        pdf.multi_cell(0, 4.5, safe(f"{tag}: {txt}"))
                 pdf.ln(5)
         else:
             pdf.set_text_color(39, 174, 96)
@@ -1090,14 +1176,18 @@ if scan_button and api_key and contract_text:
         st.session_state.scan_result = None
     elif result:
         st.session_state.scan_result = result
+        # 自动滚到结果区
+        components.html("<script>setTimeout(()=>{const e=window.parent.document.getElementById('results');e&&e.scrollIntoView({behavior:'smooth',block:'start'});},300);</script>", height=0)
 
 # ========== 第12步：渲染结果 ==========
+st.markdown('<div id="results"></div>', unsafe_allow_html=True)
 if st.session_state.scan_result:
     result = st.session_state.scan_result
     categories = result.get("categories", {})
 
     # 严重等级双语映射（AI 返回中文值，UI 按语言显示）
     SD = {"高": t("severity_high"), "中": t("severity_medium"), "低": t("severity_low")}
+    RL = {"高风险": t("severity_high"), "中等风险": t("severity_medium"), "低风险": t("severity_low")}
 
     total_issues = sum(len(cat.get("findings", [])) for cat in categories.values())
     high_count = count_by_severity(categories, "高")
@@ -1125,7 +1215,7 @@ if st.session_state.scan_result:
         risk_label = result.get("overall_risk_level", "未知")
         risk_emoji = {"高风险": "🔴", "中等风险": "🟡", "低风险": "🟢"}.get(risk_label, "⚪")
         st.markdown(f"""
-        <div style="padding:8px 0;"><span style="font-size:18px;">{risk_emoji}</span> <b style="font-size:18px;color:#0F1F3D;">{t('ai_verdict')}：{risk_label}</b></div>
+        <div style="padding:8px 0;"><span style="font-size:18px;">{risk_emoji}</span> <b style="font-size:18px;color:#0F1F3D;">{t('ai_verdict')}: {RL.get(risk_label, risk_label)}</b></div>
         <div style="background:#F8F9FB;border-radius:12px;padding:20px 24px;margin:12px 0;border-left:4px solid {score_color};">
             <p style="font-size:15px;color:#3A4A5C;margin:0;line-height:1.7;">{result.get('overall_summary', '')}</p>
         </div>
@@ -1159,7 +1249,7 @@ if st.session_state.scan_result:
         bar_pct = min(100, int((n / max(total_issues, 1)) * 100))
         dim_html += f"""
         <div class="dimension-mini">
-            <div class="dim-header"><span class="dim-icon">{icon}</span><span style="font-size:11px;">{rl_emoji} {rl}</span></div>
+            <div class="dim-header"><span class="dim-icon">{icon}</span><span style="font-size:11px;">{rl_emoji} {SD.get(rl, rl)}</span></div>
             <span class="dim-count">{n}</span><span class="dim-name">&nbsp;{t('dim_unit')}</span>
             <div class="dim-bar-bg"><div class="dim-bar-fill" style="width:{bar_pct}%;background:{color};"></div></div>
         </div>"""
@@ -1191,11 +1281,11 @@ if st.session_state.scan_result:
             all_findings = cat_data.get("findings", [])
             # 应用筛选
             findings = [f for f in all_findings if active_filter is None or f.get("severity") == active_filter]
-            risk_level = cat_data.get("risk_level", "未知")
+            risk_level = cat_data.get("risk_level", t("unknown_level"))
             dim_emoji = {"高": "🔴", "中": "🟡", "低": "🟢"}.get(risk_level, "⚪")
 
             count_text = f"{len(findings)}/{len(all_findings)}" if active_filter else str(len(findings))
-            st.markdown(f"### {dim_emoji} {icon} {name} <small style='color:#6B7B8D;font-size:14px;'>— {t('label_risk_level')}：{risk_level} | {t('label_issue_count')}：{count_text}</small>", unsafe_allow_html=True)
+            st.markdown(f"### {dim_emoji} {icon} {name} <small style='color:#6B7B8D;font-size:14px;'>— {t('label_risk_level')}: {SD.get(risk_level, risk_level)} | {t('label_issue_count')}: {count_text}</small>", unsafe_allow_html=True)
             st.markdown("---")
 
             if findings:
@@ -1205,7 +1295,7 @@ if st.session_state.scan_result:
                     sev_emoji = {"高": "🔴", "中": "🟡", "低": "🟢"}.get(sev, "⚪")
                     cn = finding.get("cn_text", "")
                     en = finding.get("en_text", "")
-                    clause_name = finding.get("clause", "未命名条款")
+                    clause_name = finding.get("clause", t("unnamed_clause"))
                     issue = finding.get("issue", "")
                     suggestion = finding.get("suggestion", "")
 
@@ -1213,25 +1303,25 @@ if st.session_state.scan_result:
                     with st.expander(f"{sev_emoji} [{sev_label}] {clause_name}", expanded=(i == 0)):
                         st.markdown(f'<span class="severity-badge {sev_class}">{sev_label}</span>', unsafe_allow_html=True)
                         st.markdown("")
-                        st.markdown(f"**{t('problem_analysis')}：** {issue}")
+                        st.markdown(f"**{t('problem_analysis')}: ** {issue}")
 
                         if cn or en:
-                            st.markdown(f"**{t('clause_compare')}：**")
+                            st.markdown(f"**{t('clause_compare')}: **")
                             cmp1, cmp2 = st.columns(2)
                             with cmp1:
-                                st.markdown(f'<div class="compare-box"><div class="lang-tag">{t("cn_original")}</div><div>{cn if cn else "（—）"}</div></div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="compare-box"><div class="lang-tag">{t("cn_original")}</div><div>{cn if cn else t("no_content")}</div></div>', unsafe_allow_html=True)
                             with cmp2:
-                                st.markdown(f'<div class="compare-box"><div class="lang-tag">{t("en_original")}</div><div>{en if en else "（—）"}</div></div>', unsafe_allow_html=True)
+                                st.markdown(f'<div class="compare-box"><div class="lang-tag">{t("en_original")}</div><div>{en if en else t("no_content")}</div></div>', unsafe_allow_html=True)
 
                         # 修改建议
-                        st.markdown(f"**{t('suggestion_label')}：** {suggestion}")
+                        st.markdown(f"**{t('suggestion_label')}: ** {suggestion}")
 
                         # 修订前后对比
                         revised_cn = finding.get("revised_cn", "")
                         revised_en = finding.get("revised_en", "")
 
                         if revised_cn or revised_en:
-                            st.markdown(f"**{t('revised_compare')}：**")
+                            st.markdown(f"**{t('revised_compare')}: **")
 
                             if revised_cn:
                                 rev_col1, rev_col2 = st.columns(2)
