@@ -120,6 +120,26 @@ L = {
                           "en": "Upload Word (.docx) / PDF / TXT<br>contract files; auto-parsed,<br>no manual copy-paste needed"},
     "empty_info":       {"zh": "👆 选择合同模板或上传文件后，点击 **「🔍 开始智能扫描」** 即可体验完整分析流程。",
                           "en": "👆 Select a template or upload a file, then click **「🔍 Start Scan」** to begin."},
+    # 国际化补漏
+    "header_tagline":   {"zh": "涉外商务合同 · 双语风险智能扫描引擎", "en": "Bilingual Contract Risk Scanner · AI-Powered"},
+    "tab_mismatch":     {"zh": "🔤 中英文不对应",              "en": "🔤 Translation Mismatch"},
+    "tab_ambiguous":    {"zh": "🌫️ 模糊条款",                  "en": "🌫️ Ambiguous Clauses"},
+    "tab_missing":      {"zh": "🕳️ 缺失条款",                  "en": "🕳️ Missing Clauses"},
+    "tab_compliance":   {"zh": "🌐 跨文化合规风险",            "en": "🌐 Cross-Border Compliance"},
+    "gauge_subtitle":   {"zh": "风险指数",                     "en": "Risk Index"},
+    "dim_unit":         {"zh": "个问题",                       "en": " issues"},
+    "label_risk_level": {"zh": "风险等级",                     "en": "Risk Level"},
+    "label_issue_count": {"zh": "问题数",                      "en": "Issues"},
+    "severity_high":    {"zh": "高风险",                       "en": "High"},
+    "severity_medium":  {"zh": "中等风险",                     "en": "Medium"},
+    "severity_low":     {"zh": "低风险",                       "en": "Low"},
+    "severity_high_short": {"zh": "高",                        "en": "H"},
+    "severity_medium_short": {"zh": "中",                      "en": "M"},
+    "severity_low_short":  {"zh": "低",                        "en": "L"},
+    "pdf_report_title": {"zh": "CrossLingo 合同风险扫描报告",   "en": "CrossLingo Contract Risk Scan Report"},
+    "pdf_stats_title":  {"zh": "统计概览",                     "en": "Statistics Overview"},
+    "pdf_risk_score":   {"zh": "综合风险指数",                 "en": "Risk Index"},
+    "pdf_dim_good":     {"zh": "该维度未发现明显风险",          "en": "No significant risks found"},
     # 页脚
     "footer_text":      {"zh": "涉外商务合同双语风险扫描器", "en": "Bilingual Contract Risk Scanner"},
     "missing_clause_placeholder": {"zh": "（条款缺失）", "en": "(Missing)"},
@@ -444,13 +464,13 @@ st.markdown("""
 st.markdown('<div class="top-frosted-bar"></div>', unsafe_allow_html=True)
 
 # ========== 第4步：品牌Header ==========
-st.markdown("""
+st.markdown(f"""
 <div class="brand-header">
     <div class="logo-area">
         <div class="logo-icon">⚖️</div>
         <div>
             <h1>CrossLingo</h1>
-            <div class="tagline">涉外商务合同 · 双语风险智能扫描引擎</div>
+            <div class="tagline">{t('header_tagline')}</div>
         </div>
     </div>
     <div class="badge">AI-Powered LegalTech</div>
@@ -787,7 +807,7 @@ def build_ring_gauge_svg(score, size=160):
         <text x="{size//2}" y="{size//2}" text-anchor="middle" dominant-baseline="central"
               fill="#0F1F3D" font-size="42" font-weight="900" letter-spacing="-1">{score}</text>
         <text x="{size//2}" y="{size//2 + 26}" text-anchor="middle" dominant-baseline="central"
-              fill="#6B7B8D" font-size="11" font-weight="600" letter-spacing="0.3">风险指数</text>
+              fill="#6B7B8D" font-size="11" font-weight="600" letter-spacing="0.3">{t('gauge_subtitle')}</text>
     </svg>"""
 
 def generate_pdf_report(result, risk_score, score_label, total_issues, high_count, medium_count, low_count):
@@ -810,7 +830,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
     pdf.set_text_color(255, 255, 255)
     pdf.set_font(F, "", 20)
     pdf.set_xy(14, 9)
-    pdf.cell(0, 10, "CrossLingo 合同风险扫描报告")
+    pdf.cell(0, 10, t("pdf_report_title"))
     pdf.set_font(F, "", 8)
     pdf.set_xy(14, 22)
     pdf.cell(0, 6, f"{datetime.now().strftime('%Y-%m-%d %H:%M')}  |  Powered by DeepSeek AI")
@@ -819,7 +839,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
     # ---- 风险指数 ----
     pdf.set_text_color(15, 31, 61)
     pdf.set_font(F, "", 16)
-    pdf.cell(0, 10, f"综合风险指数：{risk_score}/100（{score_label}）", ln=True)
+    pdf.cell(0, 10, f"{t('pdf_risk_score')}：{risk_score}/100（{score_label}）", ln=True)
     pdf.ln(4)
     # 色条
     bar_x, bar_y, bar_w, bar_h = 14, pdf.get_y(), 180, 5
@@ -846,7 +866,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
     # ---- 统计卡片 ----
     pdf.set_text_color(15, 31, 61)
     pdf.set_font(F, "", 13)
-    pdf.cell(0, 8, "统计概览", ln=True)
+    pdf.cell(0, 8, t("pdf_stats_title"), ln=True)
     pdf.ln(4)
     stats = [
         ("总数", total_issues, (58, 74, 92)),
@@ -869,7 +889,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
 
     # ---- 详情 ----
     category_keys = ["translation_mismatch", "ambiguous_clauses", "missing_clauses", "compliance_risk"]
-    dim_names = ["中英文不对应", "模糊条款", "缺失条款", "跨文化合规风险"]
+    dim_names = [t("dim_mismatch"), t("dim_ambiguous"), t("dim_missing"), t("dim_compliance")]
     categories = result.get("categories", {})
 
     for key, dim_name in zip(category_keys, dim_names):
@@ -916,7 +936,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
             pdf.set_text_color(39, 174, 96)
             pdf.set_font(F, "", 8)
             pdf.set_x(14)
-            pdf.cell(0, 5, "该维度未发现明显风险", ln=True)
+            pdf.cell(0, 5, t("pdf_dim_good"), ln=True)
             pdf.ln(4)
 
     # ---- 页脚 ----
@@ -1068,6 +1088,9 @@ if st.session_state.scan_result:
     result = st.session_state.scan_result
     categories = result.get("categories", {})
 
+    # 严重等级双语映射（AI 返回中文值，UI 按语言显示）
+    SD = {"高": t("severity_high"), "中": t("severity_medium"), "低": t("severity_low")}
+
     total_issues = sum(len(cat.get("findings", [])) for cat in categories.values())
     high_count = count_by_severity(categories, "高")
     medium_count = count_by_severity(categories, "中")
@@ -1116,7 +1139,7 @@ if st.session_state.scan_result:
     st.markdown(f"### {t('dim_brief')}")
     category_keys = ["translation_mismatch", "ambiguous_clauses", "missing_clauses", "compliance_risk"]
     dim_icons = ["🔤", "🌫️", "🕳️", "🌐"]
-    dim_names = ["中英文不对应", "模糊条款", "缺失条款", "跨文化合规"]
+    dim_names = [t("dim_mismatch"), t("dim_ambiguous"), t("dim_missing"), t("dim_compliance")]
     dim_colors = ["#2B5EA7", "#C9A06C", "#6B7B8D", "#B0BAC5"]
 
     dim_html = '<div class="dimension-strip">'
@@ -1129,7 +1152,7 @@ if st.session_state.scan_result:
         dim_html += f"""
         <div class="dimension-mini">
             <div class="dim-header"><span class="dim-icon">{icon}</span><span style="font-size:11px;">{rl_emoji} {rl}</span></div>
-            <span class="dim-count">{n}</span><span class="dim-name"> &nbsp;个问题</span>
+            <span class="dim-count">{n}</span><span class="dim-name">&nbsp;{t('dim_unit')}</span>
             <div class="dim-bar-bg"><div class="dim-bar-fill" style="width:{bar_pct}%;background:{color};"></div></div>
         </div>"""
     dim_html += '</div>'
@@ -1152,7 +1175,7 @@ if st.session_state.scan_result:
     filter_map = {t("filter_all"): None, t("filter_high"): "高", t("filter_medium"): "中", t("filter_low"): "低"}
     active_filter = filter_map[severity_filter]
 
-    tabs = st.tabs(["🔤 中英文不对应", "🌫️ 模糊条款", "🕳️ 缺失条款", "🌐 跨文化合规风险"])
+    tabs = st.tabs([t("tab_mismatch"), t("tab_ambiguous"), t("tab_missing"), t("tab_compliance")])
 
     for tab, key, icon, name in zip(tabs, category_keys, dim_icons, dim_names):
         with tab:
@@ -1164,7 +1187,7 @@ if st.session_state.scan_result:
             dim_emoji = {"高": "🔴", "中": "🟡", "低": "🟢"}.get(risk_level, "⚪")
 
             count_text = f"{len(findings)}/{len(all_findings)}" if active_filter else str(len(findings))
-            st.markdown(f"### {dim_emoji} {icon} {name} <small style='color:#6B7B8D;font-size:14px;'>— 风险等级：{risk_level} | 问题数：{count_text}</small>", unsafe_allow_html=True)
+            st.markdown(f"### {dim_emoji} {icon} {name} <small style='color:#6B7B8D;font-size:14px;'>— {t('label_risk_level')}：{risk_level} | {t('label_issue_count')}：{count_text}</small>", unsafe_allow_html=True)
             st.markdown("---")
 
             if findings:
@@ -1178,8 +1201,9 @@ if st.session_state.scan_result:
                     issue = finding.get("issue", "")
                     suggestion = finding.get("suggestion", "")
 
-                    with st.expander(f"{sev_emoji} [{sev}风险] {clause_name}", expanded=(i == 0)):
-                        st.markdown(f'<span class="severity-badge {sev_class}">{sev}风险</span>', unsafe_allow_html=True)
+                    sev_label = SD.get(sev, sev)
+                    with st.expander(f"{sev_emoji} [{sev_label}] {clause_name}", expanded=(i == 0)):
+                        st.markdown(f'<span class="severity-badge {sev_class}">{sev_label}</span>', unsafe_allow_html=True)
                         st.markdown("")
                         st.markdown(f"**{t('problem_analysis')}：** {issue}")
 
