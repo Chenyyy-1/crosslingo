@@ -1012,7 +1012,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
                 sc = {"高":(192,57,43),"中":(230,126,34),"低":(39,174,96)}.get(sev,(0,0,0))
                 pdf.set_text_color(*sc)
                 pdf.set_font(F, "", 9)
-                pdf.cell(0, 6, f"[{sev}{RT}] {safe(f.get('clause',''))}", ln=True)
+                pdf.cell(0, 6, safe(f"[{sev}{RT}] {f.get('clause','')}"), ln=True)
                 pdf.set_text_color(58, 74, 92)
                 pdf.set_font(F, "", 8)
                 pdf.set_x(14)
