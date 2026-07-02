@@ -914,7 +914,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
     def safe(s):
         if has_cjk:
             return s
-        return re.sub(r'[一-鿿　-〿＀-￯]+', '[CN]', str(s))
+        return re.sub(r'[一-鿿　-〿＀-￯ -⁯⺀-⿟㐀-䶿豈-﫿]+', '[CN]', str(s))
 
     # 标签文本
     TITLE   = t("pdf_report_title") if has_cjk else "CrossLingo Contract Risk Scan Report"
@@ -1406,17 +1406,20 @@ if st.session_state.scan_result:
             use_container_width=True
         )
     with dl_col2:
-        pdf_bytes = generate_pdf_report(
-            result, risk_score, score_label,
-            total_issues, high_count, medium_count, low_count
-        )
-        st.download_button(
-            label=t("download_pdf"),
-            data=pdf_bytes,
-            file_name=f"CrossLingo_Report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
+        try:
+            pdf_bytes = generate_pdf_report(
+                result, risk_score, score_label,
+                total_issues, high_count, medium_count, low_count
+            )
+            st.download_button(
+                label=t("download_pdf"),
+                data=pdf_bytes,
+                file_name=f"CrossLingo_Report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+        except Exception:
+            st.warning("PDF 暂不可用（云端缺少中文字体），请使用 TXT 格式下载" if st.session_state.lang == "zh" else "PDF unavailable on cloud (no CJK font). Please use TXT format.")
 
 else:
     # ---- 未扫描时：功能展示 ----
