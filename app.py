@@ -897,7 +897,7 @@ def build_ring_gauge_svg(score, size=160):
     </svg>"""
 
 def generate_pdf_report(result, risk_score, score_label, total_issues, high_count, medium_count, low_count):
-    """生成 PDF 报告。本地 macOS 支持中文，云端回退英文标签 + 过滤中文内容。"""
+    """生成 PDF 报告。本地 macOS 正常输出，云端无中文字体时由外层 try/except 兜底。"""
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=18)
     pdf.add_page()
@@ -907,32 +907,17 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
         pdf.add_font("cjk", "", FONT)
     except Exception:
         pass
-    has_cjk = "cjk" in pdf.fonts
-    F = "cjk" if has_cjk else "Helvetica"
+    F = "cjk" if "cjk" in pdf.fonts else "Helvetica"
 
-    # 无中文字体时，过滤中文内容防止 Unicode 崩溃
-    def safe(s):
-        if has_cjk:
-            return s
-        return re.sub(r'[一-鿿　-〿＀-￯ -⁯⺀-⿟㐀-䶿豈-﫿]+', '[CN]', str(s))
-
-    # 标签文本
-    TITLE   = t("pdf_report_title") if has_cjk else "CrossLingo Contract Risk Scan Report"
-    RISK    = t("pdf_risk_score") if has_cjk else "Risk Index"
-    STATS   = t("pdf_stats_title") if has_cjk else "Statistics"
-    SL = [("总数","Total"),("高危","High"),("中危","Medium"),("低危","Low")]
-    DL = [(t("dim_mismatch") if has_cjk else "Translation Mismatch"),
-          (t("dim_ambiguous") if has_cjk else "Ambiguous Clauses"),
-          (t("dim_missing") if has_cjk else "Missing Clauses"),
-          (t("dim_compliance") if has_cjk else "Cross-Border Compliance")]
-    RT = "风险" if has_cjk else "Risk"
-    IT = "问题" if has_cjk else "Issue"
-    CT = "个" if has_cjk else ""
-    PT = "问题" if has_cjk else "Problem"
-    ST = "建议" if has_cjk else "Suggestion"
-    CRT = "中文修订" if has_cjk else "CN Revised"
-    ERT = "英文修订" if has_cjk else "EN Revised"
-    GT  = t("pdf_dim_good") if has_cjk else "No significant risks found"
+    TITLE = t("pdf_report_title")
+    RISK  = t("pdf_risk_score")
+    STATS = t("pdf_stats_title")
+    SL    = [t("severity_high"), t("severity_medium"), t("severity_low")]  # 高危/中危/低危 labels not used directly, see below
+    DIMS  = [t("dim_mismatch"), t("dim_ambiguous"), t("dim_missing"), t("dim_compliance")]
+    GOOD  = t("pdf_dim_good")
+    RT, IT, CT = "风险", "问题", "个"
+    PT, ST = "问题", "建议"
+    CRT, ERT = "中文修订", "英文修订"
 
     # ---- 页眉 ----
     pdf.set_fill_color(15, 31, 61)
@@ -949,7 +934,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
     # ---- 风险指数 ----
     pdf.set_text_color(15, 31, 61)
     pdf.set_font(F, "", 16)
-    pdf.cell(0, 10, safe(f"{RISK}: {risk_score}/100 ({score_label})"), ln=True)
+    pdf.cell(0, 10, f"{RISK}: {risk_score}/100 ({score_label})", ln=True)
     pdf.ln(4)
     bar_x, bar_y, bar_w, bar_h = 14, pdf.get_y(), 180, 5
     bc = (192,57,43) if risk_score>=66 else ((230,126,34) if risk_score>=33 else (39,174,96))
@@ -964,7 +949,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
     pdf.set_text_color(58, 74, 92)
     pdf.set_font(F, "", 10)
     pdf.set_x(14)
-    pdf.multi_cell(0, 6, safe(result.get("overall_summary", "")), fill=True)
+    pdf.multi_cell(0, 6, result.get("overall_summary", ""), fill=True)
     pdf.ln(4)
 
     # ---- 统计卡片 ----
@@ -972,12 +957,13 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
     pdf.set_font(F, "", 13)
     pdf.cell(0, 8, STATS, ln=True)
     pdf.ln(4)
-    for i, (label, value, color) in enumerate([
-        (SL[0][0] if has_cjk else SL[0][1], total_issues, (58,74,92)),
-        (SL[1][0] if has_cjk else SL[1][1], high_count, (192,57,43)),
-        (SL[2][0] if has_cjk else SL[2][1], medium_count, (230,126,34)),
-        (SL[3][0] if has_cjk else SL[3][1], low_count, (39,174,96)),
-    ]):
+    stats = [
+        ("总数", total_issues, (58,74,92)),
+        ("高危", high_count, (192,57,43)),
+        ("中危", medium_count, (230,126,34)),
+        ("低危", low_count, (39,174,96)),
+    ]
+    for i, (label, value, color) in enumerate(stats):
         x = 14 + i*46
         pdf.set_fill_color(248, 249, 251)
         pdf.set_xy(x, pdf.get_y())
@@ -991,9 +977,8 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
     pdf.ln(24)
 
     # ---- 详情 ----
-    for key, dim_name in zip(
-        ["translation_mismatch","ambiguous_clauses","missing_clauses","compliance_risk"], DL
-    ):
+    category_keys = ["translation_mismatch","ambiguous_clauses","missing_clauses","compliance_risk"]
+    for key, dim_name in zip(category_keys, DIMS):
         cat = result.get("categories", {}).get(key, {})
         findings = cat.get("findings", [])
         rl = cat.get("risk_level", "低")
@@ -1001,7 +986,7 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
         pdf.set_fill_color(245, 246, 248)
         pdf.set_text_color(15, 31, 61)
         pdf.set_font(F, "", 11)
-        pdf.cell(0, 8, safe(f"  {dim_name}  |  {RT}: {rl}  |  {IT}: {len(findings)}{CT}"), ln=True, fill=True)
+        pdf.cell(0, 8, f"  {dim_name}  |  {RT}: {rl}  |  {IT}: {len(findings)}{CT}", ln=True, fill=True)
         pdf.ln(3)
 
         if findings:
@@ -1012,25 +997,25 @@ def generate_pdf_report(result, risk_score, score_label, total_issues, high_coun
                 sc = {"高":(192,57,43),"中":(230,126,34),"低":(39,174,96)}.get(sev,(0,0,0))
                 pdf.set_text_color(*sc)
                 pdf.set_font(F, "", 9)
-                pdf.cell(0, 6, safe(f"[{sev}{RT}] {f.get('clause','')}"), ln=True)
+                pdf.cell(0, 6, f"[{sev}{RT}] {f.get('clause','')}", ln=True)
                 pdf.set_text_color(58, 74, 92)
                 pdf.set_font(F, "", 8)
                 pdf.set_x(14)
-                pdf.multi_cell(0, 4.5, safe(f"{PT}: {f.get('issue','')}"))
+                pdf.multi_cell(0, 4.5, f"{PT}: {f.get('issue','')}")
                 pdf.set_text_color(201, 160, 108)
                 pdf.set_x(14)
-                pdf.multi_cell(0, 4.5, safe(f"{ST}: {f.get('suggestion','')}"))
+                pdf.multi_cell(0, 4.5, f"{ST}: {f.get('suggestion','')}")
                 for tag, txt in [(CRT, f.get("revised_cn","")), (ERT, f.get("revised_en",""))]:
                     if txt:
                         pdf.set_text_color(39, 174, 96)
                         pdf.set_x(14)
-                        pdf.multi_cell(0, 4.5, safe(f"{tag}: {txt}"))
+                        pdf.multi_cell(0, 4.5, f"{tag}: {txt}")
                 pdf.ln(5)
         else:
             pdf.set_text_color(39, 174, 96)
             pdf.set_font(F, "", 8)
             pdf.set_x(14)
-            pdf.cell(0, 5, GT, ln=True)
+            pdf.cell(0, 5, GOOD, ln=True)
             pdf.ln(4)
 
     # ---- 页脚 ----
